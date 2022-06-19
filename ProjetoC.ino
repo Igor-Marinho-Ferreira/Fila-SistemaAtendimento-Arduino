@@ -81,7 +81,7 @@ void gerarSenha(Senha **senha, int qtdNormal, int qtdPrioridade, int prioridade)
     s->senha = ++qtdNormal; 
   }
   s->next = NULL;
-  display.print("\nSENHA: %s%d\nTIPO: %s\n", s->prioridade ? " P" : " N", s->senha, s->prioridade ? " PRIORITARIA" : " NORMAL");
+  sprintf("\nSENHA: %s%d\nTIPO: %s\n", s->prioridade ? " P" : " N", s->senha, s->prioridade ? " PRIORITARIA" : " NORMAL");
   if(*senha == NULL){ // se a fila for vazia, ele adiciona ela no inicio
     *senha = s; 
   }else{ 
@@ -102,4 +102,5 @@ Senha* prioridade(Senha *senhas){
   if (s == NULL) return NULL; 
   return s; 
 }
+
 
