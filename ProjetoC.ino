@@ -8,6 +8,8 @@
 #-------------------------#
 */
 
+#include <U8glib.h>
+
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SPITFT.h>
@@ -20,7 +22,7 @@
 #define SCREEN_HEIGHT 64
 
 Adafruit_SSD1306 display = Adafruit_SSD1306();
-
+char buff[40];
 struct Senha{ //strutura de senhas
   int id; // id da senha, serve para identicar a senha
   int senha; // a senha propriamente dita
@@ -45,7 +47,7 @@ void setup(){
   Wire.begin(); //INICIALIZA A BIBLIOTECA WIRE
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C); //INICIALIZA O DISPLAY COM ENDEREÇO I2C 0x3C
   display.setTextColor(WHITE); //DEFINE A COR DO TEXTO
-  display.setTextSize(3); //DEFINE O TAMANHO DA FONTE DO TEXTO
+  display.setTextSize(1); //DEFINE O TAMANHO DA FONTE DO TEXTO
   display.clearDisplay(); //LIMPA AS INFORMAÇÕES DO DISPLAY
 }
 
@@ -58,6 +60,7 @@ void loop()
   if(digitalRead(12) == 1){
     display.setCursor(0,0); //POSIÇÃO EM QUE O CURSOR IRÁ FAZER A ESCRITA
     gerarSenha(&senhas, qtdNormal, qtdPrioridade,0);
+    display.print(buff); //ESCREVE O TEXTO NO DISPLAY
     display.display(); //EFETIVA A ESCRITA NO DISPLAY
     delay(1500); //INTERVALO DE 1,5 SEGUNDOS
     display.clearDisplay(); //LIMPA AS INFORMAÇÕES DO DISPLAY
@@ -81,7 +84,7 @@ void gerarSenha(Senha **senha, int qtdNormal, int qtdPrioridade, int prioridade)
     s->senha = ++qtdNormal; 
   }
   s->next = NULL;
-  sprintf("\nSENHA: %s%d\nTIPO: %s\n", s->prioridade ? " P" : " N", s->senha, s->prioridade ? " PRIORITARIA" : " NORMAL");
+  sprintf(buff,"\nSENHA: %s%d\nTIPO: %s\n", s->prioridade ? " P" : " N", s->senha, s->prioridade ? " PRIORITARIA" : " NORMAL");
   if(*senha == NULL){ // se a fila for vazia, ele adiciona ela no inicio
     *senha = s; 
   }else{ 
