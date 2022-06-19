@@ -60,6 +60,7 @@ void loop()
   if(digitalRead(12) == 1){
     display.setCursor(0,0); //POSIÇÃO EM QUE O CURSOR IRÁ FAZER A ESCRITA
     gerarSenha(&senhas, qtdNormal, qtdPrioridade,0);
+    qtdNormal++;
     display.print(buff); //ESCREVE O TEXTO NO DISPLAY
     display.display(); //EFETIVA A ESCRITA NO DISPLAY
     delay(1500); //INTERVALO DE 1,5 SEGUNDOS
@@ -67,7 +68,9 @@ void loop()
   }
   if(digitalRead(13) == 1){
     display.setCursor(0,0); //POSIÇÃO EM QUE O CURSOR IRÁ FAZER A ESCRITA
-    display.print("jamais"); //ESCREVE O TEXTO NO DISPLAY
+    gerarSenha(&senhas, qtdNormal, qtdPrioridade, 1);
+    qtdPrioridade++;
+    display.print(buff); //ESCREVE O TEXTO NO DISPLAY
     display.display(); //EFETIVA A ESCRITA NO DISPLAY
     delay(1500); //INTERVALO DE 1,5 SEGUNDOS
     display.clearDisplay(); //LIMPA AS INFORMAÇÕES DO DISPLAY
@@ -105,5 +108,6 @@ Senha* prioridade(Senha *senhas){
   if (s == NULL) return NULL; 
   return s; 
 }
+
 
 
