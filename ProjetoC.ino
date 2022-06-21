@@ -16,33 +16,26 @@
 #include <Adafruit_SPITFT_Macros.h>
 #include <gfxfont.h>
 #include <Wire.h> //INCLUSÃO DE BIBLIOTECA
-
-
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 
 Adafruit_SSD1306 display = Adafruit_SSD1306();
-char buff[40];
-char buff1[40];
-struct Senha{ //strutura de senhas
-  int id; // id da senha, serve para identicar a senha
-  int senha; // a senha propriamente dita
-  int prioridade;  // a prioridade que pode ser 0 - normal | 1 - prioridade
-  Senha *next; // ponteiro para a proxima senha
+#define limit 10
+
+struct fila_struct {
+  int position[limit];
+  int initial_position;
+  int end_position;
 };
 
-struct SenhasChamadas{ //strutura para guardar as senhas já chamadas
-  Senha* senha; //ponteiro para a senha já chamada
-  SenhasChamadas *next; // pontiro para a proxima senha
-};
+struct fila_struct fila;
+int num_atendimento = 0;
+int num = 0;
 
-Senha* inicializaSenha(){
-  return NULL;
-}
-
-SenhasChamadas* inicializaSenhasChamadas(){
-  return NULL;
-}
+int senha = 0;
+bool sair = true;
+char buff[35];
+char buff1[35];
 
 void setup(){
   pinMode(12, INPUT);
@@ -58,121 +51,65 @@ void setup(){
 
 void loop()
 {
-  Senha* senhas = inicializaSenha(); 
-  SenhasChamadas* senhasChamadas = inicializaSenhasChamadas();
-  int cp = 2; 
-  int qtdPrioridade = 0; 
-  int qtdNormal = 0; 
+  fila.initial_position = 0;
+  fila.end_position = 0;
+  
   if(digitalRead(12) == 1){
     display.setCursor(0,0); //POSIÇÃO EM QUE O CURSOR IRÁ FAZER A ESCRITA
-    gerarSenha(&senhas, qtdNormal, qtdPrioridade,0);
-    qtdNormal++;
+    retirar_senha();
     display.print(buff); //ESCREVE O TEXTO NO DISPLAY
     display.display(); //EFETIVA A ESCRITA NO DISPLAY
-    delay(1500); //INTERVALO DE 1,5 SEGUNDOS
-    display.clearDisplay(); //LIMPA AS INFORMAÇÕES DO DISPLAY
-  }
-  if(digitalRead(13) == 1){
-    display.setCursor(0,0); //POSIÇÃO EM QUE O CURSOR IRÁ FAZER A ESCRITA
-    gerarSenha(&senhas, qtdNormal, qtdPrioridade, 1);
-    qtdPrioridade++;
-    display.print(buff); //ESCREVE O TEXTO NO DISPLAY
-    display.display(); //EFETIVA A ESCRITA NO DISPLAY
-    delay(1500); //INTERVALO DE 1,5 SEGUNDOS
-    display.clearDisplay(); //LIMPA AS INFORMAÇÕES DO DISPLAY
-  }
+    delay(150);
+  }  
   if(digitalRead(2) == 1){
     display.setCursor(0,0); //POSIÇÃO EM QUE O CURSOR IRÁ FAZER A ESCRITA
-    chamar(&senhas, &senhasChamadas, &cp);
+    fila_decrement();
     display.print(buff1); //ESCREVE O TEXTO NO DISPLAY
     display.display(); //EFETIVA A ESCRITA NO DISPLAY
-    delay(1500); //INTERVALO DE 1,5 SEGUNDOS
-    display.clearDisplay(); //LIMPA AS INFORMAÇÕES DO DISPLAY
-  }  
-}
-
-void gerarSenha(Senha **senha, int qtdNormal, int qtdPrioridade, int prioridade){
-  Senha* s = (Senha*) malloc(sizeof(Senha)); //ponteiro para guardar uma senha, alocando memoria 
-  s->id =  (qtdNormal + qtdPrioridade)+1; 
-  s->prioridade = prioridade; 
-  if(prioridade){ 
-    s->senha = ++qtdPrioridade; 
-  }else{ // se não
-    s->senha = ++qtdNormal; 
+    delay(150); 
   }
-  s->next = NULL;
-  sprintf(buff,"\nSENHA: %s%d\nTIPO: %s\n", s->prioridade ? " P" : " N", s->senha, s->prioridade ? " PRIORITARIA" : " NORMAL");
-  if(*senha == NULL){ // se a fila for vazia, ele adiciona ela no inicio
-    *senha = s; 
-  }else{ 
-    Senha* aux = *senha; 
-    while(aux->next != NULL){ // usamos um loop para percorrer todos realocando todos uma pocisão a cima
-      aux = aux->next;
-    }
-    aux->next = s; 
+}
+void fila_increment(int senha){
+  if (fila.end_position == limit) {
+  }
+  else {
+    fila.position[fila.end_position] = senha;
+    fila.end_position++;
   }
 }
 
-Senha* prioridade(Senha *senhas){
-  Senha* s = senhas; // criamos um ponteiro para armazenar temporariamente a fila de senhas
-  while (s != NULL) { 
-    if (s->prioridade == 1) break; 
-    s = s->next; 
+void retirar_senha(){
+  int sua_senha;
+  if (validar() == 1) {
+    sua_senha = senha + 1;
+    sprintf(buff,"Sua senha: %d", sua_senha);
+    senha++;
+    fila_increment(sua_senha);
+  } else if(senha == 10) {
+    sprintf(buff,"A fila ja esta completa");
   }
-  if (s == NULL) return NULL; 
-  return s; 
+  display.clearDisplay();
+  display.display();
 }
 
-Senha* excluirsenha(Senha *senhas, int id){
-  Senha* ant = NULL; 
-  Senha* s = senhas; 
-
-  while (s != NULL && s->id != id) { // criamos um looping para percorrer as senhas até o final da fila ou encontarar uma com o id que querermos
-    ant = s; 
-    s = s->next; 
+void fila_decrement(){
+  for (int i=0; i<limit -1; i++) {
+     fila.position[i] = fila.position[i+1];
   }
-  if(s == NULL){
-    return senhas; 
-  }
-  if (ant == NULL) { // se a senha anterior for NULL quer dizer que o que procuramos está no topo da fila
-    senhas = s->next; 
-  }else { 
-    ant->next = s->next; 
-  }
-  free(s); // liberamos da memoria o ponteiro que criamos para percorrer as senhas
-  return senhas;
+  fila.position[fila.end_position] = 0;
+  fila.end_position--;
+  num_atendimento++;
+  sprintf(buff1,"SENHA: %d \n", num_atendimento);
+  display.clearDisplay();
+  display.display();
 }
 
-void chamar(Senha** senhas, SenhasChamadas** senhasChamadas, int *cp){
-
-  if(*senhas == NULL) return; // se a fila de senhas for NULL então a fila está vazia e encerramos a função
-
-  Senha* s; // criamos um ponteiro para senhas
-  if(*cp == 2){
-    s = *senhas;
-    *cp = 0; 
-  }else{ 
-    Senha* prioridades = prioridade(*senhas); // criamos um pontiro para senhas e inicializamos ele com a função de prioridade
-    if(prioridades != NULL){ 
-      s = prioridades; // então atrinuimos ela ao ponteiro de senhas que criamos e incrementamos o contador de senha com prioridades chamadas
-      *cp = *cp + 1; 
-    }else{ 
-      s = *senhas; // então chamamos o proximo da fila, que sempre sera o primeiro
-    }
+int validar(){
+  if (senha == limit) {
+    return -1;
   }
-
-  SenhasChamadas* sc = (SenhasChamadas*) malloc(sizeof(SenhasChamadas)); // criamos um ponteiro para as senhas já chamadas e inicializamos alocando memoria 
-  Senha *ant = (Senha*) malloc(sizeof(Senha));  // criamos um ponteiro para uma senha e alocamos memoria do tamannho de uma strutura Senha
-  ant->id = s->id; 
-  ant->prioridade = s->prioridade; 
-  ant->senha = s->senha; 
-  ant->next = NULL; 
-  sc->senha = ant; 
-  sc->next = *senhasChamadas; 
-  *senhasChamadas = sc; 
-  sprintf(buff1,"\nSENHA CHAMADA: %s%d\nTIPO: %s\n", s->prioridade ? " P" : " N", s->senha, s->prioridade ? " PRIORITARIA" : " NORMAL");
-  *senhas = excluirsenha(*senhas, s->id); 
+  else if(senha <= limit) {
+    return 1;
+  }
+  
 }
-
-
-
